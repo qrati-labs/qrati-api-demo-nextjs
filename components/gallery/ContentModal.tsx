@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import type { Content } from "@/lib/types";
 
 export function ContentModal({

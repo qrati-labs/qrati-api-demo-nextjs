@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import type { ModerationItem } from "@/lib/types";
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));

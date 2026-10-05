@@ -1,4 +1,4 @@
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import { isContest, reactionsFor } from "@/lib/engagement";
 

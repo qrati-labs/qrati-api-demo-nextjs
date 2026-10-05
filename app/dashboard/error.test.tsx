@@ -11,4 +11,12 @@ describe("DashboardError boundary", () => {
     fireEvent.click(screen.getByText("Retry"));
     expect(reset).toHaveBeenCalled();
   });
+
+  it("shows a generic message instead of Next's redacted production message (it carries a digest)", () => {
+    const error = Object.assign(new Error("An error occurred in the Server Components render."), { digest: "123" });
+    render(<DashboardError error={error} reset={() => {}} />);
+
+    expect(screen.getByText("Something went wrong while loading this page.")).toBeInTheDocument();
+    expect(screen.queryByText(/Server Components render/)).not.toBeInTheDocument();
+  });
 });

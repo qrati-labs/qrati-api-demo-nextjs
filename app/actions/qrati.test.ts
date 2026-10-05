@@ -1,6 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+const { FakeQratiApiError } = vi.hoisted(() => ({
+  FakeQratiApiError: class extends Error {
+    constructor(
+      readonly status: number,
+      message: string,
+      readonly code?: string
+    ) {
+      super(message);
+    }
+  },
+}));
+
 vi.mock("@/lib/qrati", () => ({
+  QratiApiError: FakeQratiApiError,
   qratiGet: vi.fn(async () => ({ ok: "get" })),
   qratiList: vi.fn(async () => ({ ok: "list" })),
   qratiRaw: vi.fn(async () => ({ ok: "raw" })),
@@ -196,5 +209,19 @@ describe("server actions — thin wiring to /v1 routes", () => {
       method: "PATCH",
       body: { status: "REJECTED", reason: "off-topic" },
     });
+  });
+
+  it("returns an API error as data ({ __qratiError }) so its message survives a production build", async () => {
+    vi.mocked(qrati.qratiGet).mockRejectedValueOnce(new FakeQratiApiError(409, "Content is still processing", "content_not_ready"));
+
+    const result = await actions.moderateContent({ contentId: "c1", status: "APPROVED" });
+
+    expect(result).toEqual({ __qratiError: { status: 409, code: "content_not_ready", message: "Content is still processing" } });
+  });
+
+  it("rethrows errors that are not API errors (e.g. not signed in)", async () => {
+    vi.mocked(qrati.qratiGet).mockRejectedValueOnce(new Error("Not signed in."));
+
+    await expect(actions.getOrganization()).rejects.toThrow("Not signed in.");
   });
 });

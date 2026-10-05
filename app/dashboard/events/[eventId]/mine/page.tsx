@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import type { Content } from "@/lib/types";
 
 // content.mine isn't event-scoped in the /v1 API (no eventId param) — this

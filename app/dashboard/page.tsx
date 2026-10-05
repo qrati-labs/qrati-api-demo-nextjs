@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import type { QratiEvent, QratiFolder } from "@/lib/types";
 
 // Read-only org/event browser. Creating events, event/org settings, ad
