@@ -1,0 +1,26 @@
+name: API drift
+
+# Compares the live public OpenAPI spec with the endpoints this demo wraps, so the demo cannot
+# silently fall behind the API. Failing here means the API gained, lost or renamed an operation.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:drift

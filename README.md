@@ -42,8 +42,28 @@ Register an account on the login page, then open an event. Each signed-in demo u
 |---|---|
 | `pnpm dev` / `pnpm build` / `pnpm start` | Run, build, serve (port 3010) |
 | `pnpm test` | Unit and component tests (vitest, no network or API key needed) |
-| `pnpm vitest run --coverage` | Same, with a coverage report |
+| `pnpm test:coverage` | Same, with a coverage report and enforced thresholds |
+| `pnpm test:e2e` | Browser tests (Playwright) against the built app and a fake Qrati API; needs MongoDB and `pnpm build` first |
+| `pnpm test:drift` | Checks that every operation in the live OpenAPI spec is wrapped (needs network) |
 | `pnpm lint` | ESLint |
+
+## Testing
+
+CI (GitHub Actions) runs on every push and pull request:
+
+- **Lint and type check.**
+- **Unit and component tests** on Node 20, 22 and 24, with coverage thresholds, plus a production build.
+- **End-to-end tests** in Chromium: sign-in, every dashboard flow, uploads (including failure and recovery paths), moderation, reactions and curation per engagement style, live stream updates, and a check that the secret key never reaches the browser. They run against `e2e/fake-api`, a small in-memory fake of the Qrati API, so no credentials are needed.
+- **Dependency audit:** production dependencies must have no known vulnerabilities.
+- **API drift** (weekly and on `main`): fails when the live OpenAPI spec gains, loses or renames an operation this demo does not wrap.
+- **CodeQL** security analysis.
+
+To run the browser tests locally, start MongoDB, then:
+
+```bash
+pnpm build
+MONGODB_URI=mongodb://localhost:27017/qrati-demo-e2e pnpm test:e2e
+```
 
 ## What it demonstrates
 
