@@ -35,6 +35,13 @@ interface RequestOptions {
 
 /** Raw call against api.qrati.com/v1 — Bearer key + optional end-user identity headers. */
 async function send(path: string, opts: RequestOptions = {}) {
+  // Server Actions are public POST endpoints, so every call that carries the secret key requires a session,
+  // and the path may only contain URL-safe segments (ids are hex): no "..", "?", "#" or encoded characters.
+  await requireSession();
+  if (!/^\/[A-Za-z0-9_\-/]*$/.test(path) || path.includes("//") || path.split("/").includes("..")) {
+    throw new Error(`Invalid request path: ${path}`);
+  }
+
   if ((opts.requireIdentity ?? false) && !opts.identity?.uid) {
     throw new Error("This call needs a signed-in identity (x-qrati-uid).");
   }
@@ -103,10 +110,15 @@ export async function qratiProbe(path: string) {
   return { httpStatus: res.status, ...body };
 }
 
-/** The signed-in demo user, reshaped into the uid/fname/lname identity Qrati expects. */
-export async function currentIdentity(): Promise<Identity> {
+async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Not signed in.");
+  return session;
+}
+
+/** The signed-in demo user, reshaped into the uid/fname/lname identity Qrati expects. */
+export async function currentIdentity(): Promise<Identity> {
+  const session = await requireSession();
   const [fname, ...rest] = session.user.name.split(" ");
   return { uid: session.user.id, fname, lname: rest.join(" ") || undefined };
 }

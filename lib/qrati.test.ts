@@ -27,11 +27,39 @@ describe("qrati http client", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
+    mockHeaders.mockResolvedValue(new Headers());
+    mockGetSession.mockResolvedValue({ user: { id: "user_1", name: "Ada Lovelace" } });
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+  });
+
+  it("refuses every call without a session, before contacting the API (Server Actions are public endpoints)", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    await expect(qratiGet("/organization")).rejects.toThrow("Not signed in.");
+    await expect(qratiList("/content")).rejects.toThrow("Not signed in.");
+    await expect(qratiRaw("/uploads", { method: "POST" })).rejects.toThrow("Not signed in.");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["/events/../moderation/queue", "/events/abc?x=1", "/events/abc#f", "/events/%2e%2e/x", "//evil.test/x", "/events/a b", "events/abc", "/events/abc\\x", "/content/\u202e"])(
+    "rejects the unsafe path %j without contacting the API",
+    async (path) => {
+      await expect(qratiGet(path)).rejects.toThrow(/Invalid request path/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it("accepts the paths the demo actually uses", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { data: {} }));
+
+    for (const path of ["/organization", "/events/6ac3a689f263bed8cdae55b4/curation-queue", "/content/count", "/moderation/queue", "/uploads/status"]) {
+      await qratiGet(path);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("sends a Bearer auth header against the configured base URL", async () => {
