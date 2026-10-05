@@ -2,12 +2,20 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import EventLayout from "./layout";
 import * as actions from "@/app/actions/qrati";
+import { ActionError } from "@/lib/actions";
 
 vi.mock("@/app/actions/qrati", () => ({
   getEvent: vi.fn(),
   getEventStats: vi.fn(),
   getEventUploadCount: vi.fn(),
 }));
+
+const notFound = vi.hoisted(() =>
+  vi.fn(() => {
+    throw new Error("NEXT_NOT_FOUND");
+  })
+);
+vi.mock("next/navigation", () => ({ notFound }));
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
@@ -79,5 +87,23 @@ describe("EventLayout (server component)", () => {
 
     expect(screen.getByText("e1")).toBeInTheDocument();
     expect(screen.queryByText(/^\d+ uploads$/)).not.toBeInTheDocument();
+  });
+
+  it("renders Next's 404 page when the API says the event does not exist", async () => {
+    vi.mocked(actions.getEvent).mockResolvedValue({ __qratiError: { status: 404, code: "event_not_found", message: "Event not found" } });
+    vi.mocked(actions.getEventStats).mockResolvedValue({});
+    vi.mocked(actions.getEventUploadCount).mockResolvedValue({ uploadCount: {} });
+
+    await expect(EventLayout({ children: <div>child</div>, params: Promise.resolve({ eventId: "missing" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(notFound).toHaveBeenCalled();
+  });
+
+  it("lets other API errors reach the error boundary", async () => {
+    vi.mocked(actions.getEvent).mockResolvedValue({ __qratiError: { status: 403, code: "cross_org_access", message: "Forbidden" } });
+    vi.mocked(actions.getEventStats).mockResolvedValue({});
+    vi.mocked(actions.getEventUploadCount).mockResolvedValue({ uploadCount: {} });
+
+    await expect(EventLayout({ children: <div>child</div>, params: Promise.resolve({ eventId: "e1" }) })).rejects.toBeInstanceOf(ActionError);
+    expect(notFound).not.toHaveBeenCalled();
   });
 });

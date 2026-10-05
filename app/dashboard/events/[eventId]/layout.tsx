@@ -1,5 +1,5 @@
 import Link from "next/link";
-import * as actions from "@/app/actions/qrati";
+import { actions, notFoundOn404 } from "@/lib/actions";
 import { engagementStyle, isContest } from "@/lib/engagement";
 
 export default async function EventLayout({
@@ -11,7 +11,8 @@ export default async function EventLayout({
 }) {
   const { eventId } = await params;
   const [event, stats, uploadCount] = await Promise.all([
-    actions.getEvent(eventId),
+    // A missing event renders Next's 404 page; other failures reach the error boundary.
+    actions.getEvent(eventId).catch(notFoundOn404),
     actions.getEventStats(eventId).catch(() => null),
     actions.getEventUploadCount(eventId).catch(() => null),
   ]);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUpload, completeUpload, failUpload, abortUpload, uploadStatus } from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 
 /**
  * Replicates the SDK's high-level upload() three-step flow (create -> S3 PUT
@@ -28,11 +28,11 @@ export function UploadForm({ eventId }: { eventId: string }) {
     if (!file) return;
     setError(null);
     setStatus("creating upload...");
-    let created: Awaited<ReturnType<typeof createUpload>> | null = null;
+    let created: Awaited<ReturnType<typeof actions.createUpload>> | null = null;
     // Lets /uploads/status find this upload even if the create response never arrives.
     const clientUploadId = crypto.randomUUID();
     try {
-      created = await createUpload({
+      created = await actions.createUpload({
         eventId,
         fileName: file.name,
         fileSize: file.size,
@@ -49,13 +49,13 @@ export function UploadForm({ eventId }: { eventId: string }) {
         body: file,
       });
       if (!put.ok) {
-        await failUpload(created.contentId).catch(() => {});
+        await actions.failUpload(created.contentId).catch(() => {});
         throw new Error(`S3 PUT failed with status ${put.status}`);
       }
 
       setStatus("completing...");
-      await completeUpload({ contentId: created.contentId, key: created.key });
-      const result = await uploadStatus({ contentId: created.contentId }).catch(() => null);
+      await actions.completeUpload({ contentId: created.contentId, key: created.key });
+      const result = await actions.uploadStatus({ contentId: created.contentId }).catch(() => null);
       setStatus(
         result
           ? `done — processing: ${result.processingStatus}, moderation: ${result.moderationStatus}. Redirecting...`
@@ -66,7 +66,7 @@ export function UploadForm({ eventId }: { eventId: string }) {
     } catch (err) {
       if (!created) {
         // The create response may have been lost after the server stored the upload: ask by clientUploadId.
-        const existing = await uploadStatus({ eventId, clientUploadId }).catch(() => null);
+        const existing = await actions.uploadStatus({ eventId, clientUploadId }).catch(() => null);
         if (existing) {
           setError(`Upload ${existing.contentId} was created (processing: ${existing.processingStatus}) but the response was lost.`);
           setStatus(null);
@@ -74,7 +74,7 @@ export function UploadForm({ eventId }: { eventId: string }) {
         }
       }
       if (created && err instanceof Error && !err.message.startsWith("S3 PUT failed")) {
-        await abortUpload({ contentId: created.contentId, key: created.key }).catch(() => {});
+        await actions.abortUpload({ contentId: created.contentId, key: created.key }).catch(() => {});
       }
       setError(err instanceof Error ? err.message : String(err));
       setStatus(null);

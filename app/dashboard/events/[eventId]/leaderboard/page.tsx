@@ -1,4 +1,4 @@
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 
 // GET /v1/events/{id}/leaderboard returns, per board, { topRankers: [...], userRank: [...] }.
 // Point rows carry totalPoint, score rows carry maxScore; userRank is the caller's own row.

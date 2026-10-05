@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import * as actions from "@/app/actions/qrati";
+import { actions } from "@/lib/actions";
 import { isContest } from "@/lib/engagement";
 import type { Content } from "@/lib/types";
 
