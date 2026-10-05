@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Dummy values: the tests mock the API and the build never calls it.
+      QRATI_API_KEY: ci-placeholder
+      QRATI_BASE_URL: https://api.qrati.com/v1
+      MONGODB_URI: mongodb://localhost:27017/ci
+      BETTER_AUTH_SECRET: ci-placeholder-ci-placeholder-ci-placeholder
+      BETTER_AUTH_URL: http://localhost:3010
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: npx tsc --noEmit
+      - run: pnpm test
+      - run: pnpm build
