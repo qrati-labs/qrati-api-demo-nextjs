@@ -13,7 +13,7 @@ The organization's secret key stays on the server. The browser talks only to Ser
 
 ## Prerequisites
 
-- Node.js 20.9+ and [pnpm](https://pnpm.io)
+- Node.js 22.13+ and [pnpm](https://pnpm.io) 11 (pnpm 11 itself requires Node 22.13+)
 - A Qrati organization with at least one event, created in the Qrati dashboard (the API cannot create events).
 - A **secret** API key with `write` scope, created in the dashboard under organization settings → API Keys.
 - A MongoDB instance. The demo uses it only for its own sign-in (Better Auth), not for Qrati data.
@@ -52,7 +52,7 @@ Register an account on the login page, then open an event. Each signed-in demo u
 CI (GitHub Actions) runs on every push and pull request:
 
 - **Lint and type check.**
-- **Unit and component tests** on Node 20, 22 and 24, with coverage thresholds, plus a production build.
+- **Unit and component tests** on Node 22 and 24, with coverage thresholds, plus a production build.
 - **End-to-end tests** in Chromium: sign-in, every dashboard flow, uploads (including failure and recovery paths), moderation, reactions and curation per engagement style, live stream updates, and a check that the secret key never reaches the browser. They run against `e2e/fake-api`, a small in-memory fake of the Qrati API, so no credentials are needed.
 - **Dependency audit:** production dependencies must have no known vulnerabilities.
 - **API drift** (weekly and on `main`): fails when the live OpenAPI spec gains, loses or renames an operation this demo does not wrap.

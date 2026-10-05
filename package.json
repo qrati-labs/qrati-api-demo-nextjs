@@ -19,7 +19,7 @@
     "example"
   ],
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.13.0"
   },
   "private": true,
   "scripts": {
